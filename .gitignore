@@ -1,0 +1,10 @@
+.gitignore~
+*.elf
+*.o
+*.ld
+*.dis
+*.hex
+*.map
+*.c~
+*.h~
+*.m~
