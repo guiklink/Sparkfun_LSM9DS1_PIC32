@@ -57,22 +57,30 @@ void start_comm(unsigned char sad, unsigned char ad){
   i2c_master_send(ad);
 }
 
-unsigned char read_register(unsigned char sad, unsigned char ad){
-  unsigned char output;
+int read_register(unsigned char sad, unsigned char ad, unsigned char * buffer, int n_bytes_read){
+  int read_index = 0;
 
   start_comm(sad, ad);
   i2c_master_restart();
   i2c_master_send((sad << 1) | 1) ;
 
-  output = i2c_master_recv();
-  i2c_master_ack(1);
+  while(read_index < n_bytes_read){
+    buffer[read_index] = i2c_master_recv();
+    read_index++;
+
+    if(read_index == n_bytes_read)
+      i2c_master_ack(1);
+    else
+      i2c_master_ack(0);
+  }
   i2c_master_stop();
 
-  return output;
+  return 1;
 }
 
 unsigned char test_IMU(){
-  unsigned char buffer;
+  unsigned char buffer[1];
   NU32_WriteUART1("Testing WHO_AM_I \r\n");
-  return read_register(SAD_AG_1, A_G_WHO_AM_I);
+  read_register(SAD_AG_1, A_G_WHO_AM_I, buffer, 1);
+  return buffer[0];
 }
