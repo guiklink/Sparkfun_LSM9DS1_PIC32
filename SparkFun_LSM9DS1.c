@@ -9,7 +9,7 @@
 // Connect SDA1 to the SDA pin on the slave and SCL1 to the SCL pin on a slave
 
 void i2c_master_setup(void) {
-  I2C2BRG = 390;                    // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
+  I2C2BRG = 90;                    // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
                                     // Fsck is the freq (100 kHz here), PGD = 104 ns
   I2C2CONbits.ON = 1;               // turn on the I2C1 module
 }
@@ -29,7 +29,7 @@ void i2c_master_send(unsigned char byte) { // send a byte to slave
   I2C2TRN = byte;                   // if an address, bit 0 = 0 for write, 1 for read
   while(I2C2STATbits.TRSTAT) { ; }  // wait for the transmission to finish
   if(I2C2STATbits.ACKSTAT) {        // if this is high, slave has not acknowledged
-    NU32_WriteUART3("I2C2 Master: failed to receive ACK\r\n");
+    NU32_WriteUART1("I2C2 Master: failed to receive ACK\r\n");
   }
 }
 
@@ -61,16 +61,18 @@ unsigned char read_register(unsigned char sad, unsigned char ad){
   unsigned char output;
 
   start_comm(sad, ad);
-  i2c_master_restart;
+  i2c_master_restart();
   i2c_master_send((sad << 1) | 1) ;
 
   output = i2c_master_recv();
   i2c_master_ack(1);
   i2c_master_stop();
+
+  return output;
 }
 
 unsigned char test_IMU(){
   unsigned char buffer;
-
+  NU32_WriteUART1("Testing WHO_AM_I \r\n");
   return read_register(SAD_AG_1, A_G_WHO_AM_I);
 }

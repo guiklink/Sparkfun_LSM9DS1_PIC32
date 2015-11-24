@@ -17,7 +17,7 @@ int main() {
   i2c_master_setup();
   //NU32_WriteUART1("After IMU setup \r\n");
   
-  unsigned char answer = 0;
+  unsigned char answer = 2;
   unsigned int waitCounter = 0;
   //sprintf(msg, "  %d", waitCounter);
   //NU32_WriteUART1(msg);
@@ -28,7 +28,7 @@ int main() {
   answer = test_IMU();
 
   for(waitCounter = 0;
-      waitCounter<100000000;waitCounter++){;}
+      waitCounter<100000;waitCounter++){;}
 
   sprintf(msg, "Received %d", answer);
   NU32_WriteUART1(msg);
