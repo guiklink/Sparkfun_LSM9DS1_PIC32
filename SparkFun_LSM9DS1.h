@@ -9,6 +9,11 @@
 #ifndef SPARKFUNLSM9DS1__H__
 #define SPARKFUNLSM9DS1__H__
 
+#define SAD_AG_0 0x6A
+#define SAD_AG_1 0x6B
+#define SAD_M_0 0x1C
+#define SAD_M_1 0x1E
+
 #define A_G_WHO_AM_I 0x0F
 
 void i2c_master_setup(void);              // set up I2C 1 as a master, at 100 kHz

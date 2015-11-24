@@ -14,7 +14,7 @@ int main() {
   LCD_Setup();
   //NU32_WriteUART1("After setup \r\n");
   //NU32_WriteUART1("Before IMU setup \r\n");
-  i2C_setup();
+  i2c_master_setup();
   //NU32_WriteUART1("After IMU setup \r\n");
   
   unsigned char answer = 0;
