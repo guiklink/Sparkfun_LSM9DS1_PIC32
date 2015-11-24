@@ -21,7 +21,8 @@ static volatile unsigned char sad = 0;                     // the 7-bit address 
 static volatile unsigned char address = 0;                     // the 7-bit address to write to / read from
 static volatile unsigned int n_write = 0;                          // number of data bytes to write
 static volatile unsigned int n_read = 0;                           // number of data bytes to read
-
+char msg[20];
+static unsigned int timer, waitedTooLong;
 
 void __ISR(_I2C_2_VECTOR, IPL1SOFT) I2C2SlaveInterrupt(void) {    // _I2C_1_VECTOR = 25
   static unsigned int write_index = 0, read_index = 0;   // indexes into the read/write arrays
@@ -29,21 +30,39 @@ void __ISR(_I2C_2_VECTOR, IPL1SOFT) I2C2SlaveInterrupt(void) {    // _I2C_1_VECT
 
   switch(state) {
     case START:                                 // start bit has been sent
+      NU32_WriteUART1("START \r\n");
       write_index = 0;                          // reset indices
       read_index = 0;
+      sprintf(msg, "  %d \r\n", sad << 1);
+      NU32_WriteUART1(msg);
       I2C2TRN = sad << 1;                       // send the slave address, with write mode set (SAD + W)
       state = SAK;
       break;
     case SAK:
+      //timer = 0;
+      //waitedTooLong = 0;
       NU32_WriteUART1("SAK \r\n");
-      while(I2C2STATbits.ACKSTAT){;}            // wait for a slave ACK (from the AG or M)
-      state = SUB;
-      break;
-    case SUB:
+      /*while(I2C2STATbits.ACKSTAT && !waitedTooLong){
+        timer++;
+        if(timer > 1000000){
+          NU32_WriteUART1("Waited too much \r\n");
+          I2C2CONbits.RSEN = 1;               // send the restart 
+          state = START;
+          waitedTooLong = 1;
+        }
+      }*/            // wait for a slave ACK (from the AG or M)
+      //if(!waitedTooLong)
+
       NU32_WriteUART1("SUB \r\n");
       I2C2TRN = address;                        // transfer register sub-address (SUB)
       state = SAK2;
+      //state = SUB;
       break;
+    /*case SUB:
+      NU32_WriteUART1("SUB \r\n");
+      I2C2TRN = address;                        // transfer register sub-address (SUB)
+      state = SAK2;
+      break;*/
     case SAK2:
     NU32_WriteUART1("SAK 2 \r\n");
       while(I2C2STATbits.ACKSTAT){;}            // wait for a slave ACK (from the AG or M)
@@ -52,11 +71,15 @@ void __ISR(_I2C_2_VECTOR, IPL1SOFT) I2C2SlaveInterrupt(void) {    // _I2C_1_VECT
       }
       else if (n_write == 0 && n_read > 0 && read_index < n_read) { // Prepare to read data
         if(read_index == 0){
+          NU32_WriteUART1("READ: SR \r\n");
           I2C2CONbits.RSEN = 1;               // send the restart to begin the read
           //I2C2CONbits.SEN = 1;               // send the restart to begin the read
+          NU32_WriteUART1("READ: SAD + R \r\n");
           I2C2TRN = (sad << 1) | 1;           // send the slave address, with write mode set (SAD + R)
           while(I2C2STATbits.ACKSTAT){;}      // wait for a slave ACK (from the AG or M)
         }
+        I2C2CONbits.RCEN = 1;                 // Enable data receiver
+        //while(!I2C2STATbits.RBF){;}           // Wait to receive data
         state = READ;
       }
       else{
@@ -77,13 +100,19 @@ void __ISR(_I2C_2_VECTOR, IPL1SOFT) I2C2SlaveInterrupt(void) {    // _I2C_1_VECT
       I2C2TRN = (address << 1) | 1; // the address is sent with the read bit sent
       break;
     case READ:
-      NU32_WriteUART1("READ \r\n");
+      sprintf(msg, "READ  %d \r\n", read_index);
+      NU32_WriteUART1(msg);
+      //NU32_WriteUART1("READ \r\n");
       to_read[read_index] = I2C2RCV;
+      sprintf(msg, "READ value = %d \r\n", to_read[read_index]);
+      NU32_WriteUART1(msg);
       ++read_index;
       if(read_index == n_read) {  // we are done reading, so send a nack
+        NU32_WriteUART1("preparing to NMACK \r\n");
         state = NMACK;
         I2C2CONbits.ACKDT = 1;    // aplicable during master receive, 1 = send NACK | 0 = send ACK
       } else {
+        NU32_WriteUART1("preparing to MACK \r\n");
         state = MACK;
         I2C2CONbits.ACKDT = 0;    // send back a MACK
       }
@@ -152,8 +181,10 @@ int i2c_write_byte(unsigned int addr, unsigned char byte) {
 }
 
 unsigned char test_IMU(){
+  //buffer_t output;
   unsigned char output;
   //NU32_WriteUART1("here 1 \r\n");
   i2c_write_read(0x6B, A_G_WHO_AM_I, NULL, 0, &output, 1);
   return output;
+  //return output[0];
 }
