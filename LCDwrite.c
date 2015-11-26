@@ -14,32 +14,14 @@ int main() {
   LCD_Setup();
   //NU32_WriteUART1("After setup \r\n");
   //NU32_WriteUART1("Before IMU setup \r\n");
-  i2c_master_setup();
+  nreceived = i2c_master_setup();
   //NU32_WriteUART1("After IMU setup \r\n");
   
-  unsigned char answer = 2;
-  unsigned int waitCounter = 0;
-  //sprintf(msg, "  %d", waitCounter);
-  //NU32_WriteUART1(msg);
+  if(nreceived)
+    NU32_WriteUART1("IMU working!\r\n");
+  else
+    NU32_WriteUART1("IMU NOT working!\r\n");
 
-  
-
-  //NU32_WriteUART1("\nAbout to ping IMU \r\n");
-  answer = test_IMU();
-
-  for(waitCounter = 0;
-      waitCounter<100000;waitCounter++){;}
-
-  sprintf(msg, "Received %d", answer);
-  NU32_WriteUART1(msg);
-
-  /*while (1) {
-    NU32_WriteUART1("About to ping IMU \r\n");
-    answer = test_IMU();
-    sprintf(msg, "Received %d", answer);
-    NU32_WriteUART1(msg);
-    
-  }*/
   return 0;
 }
 

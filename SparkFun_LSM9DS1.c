@@ -1,5 +1,6 @@
-#include "NU32.h"          // constants, funcs for startup and UART
+#include "NU32.h"               // constants, funcs for startup and UART
 #include "SparkFun_LSM9DS1.h"
+#include "LSM9DS1_Registers.h"
 
 // I2C Master utilities, 100 kHz, using polling rather than interrupts
 // The functions must be callled in the correct order as per the I2C protocol
@@ -8,10 +9,20 @@
 // but something close will do.
 // Connect SDA1 to the SDA pin on the slave and SCL1 to the SCL pin on a slave
 
-void i2c_master_setup(void) {
-  I2C2BRG = 90;                    // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
+int i2c_master_setup(void) {
+  I2C2BRG = 90;                     // I2CBRG = [1/(2*Fsck) - PGD]*Pblck - 2 
                                     // Fsck is the freq (100 kHz here), PGD = 104 ns
   I2C2CONbits.ON = 1;               // turn on the I2C1 module
+
+  int status = 0, wait;             // Used to check is A, G and M is working
+  char status_A_G, status_M;
+  status_A_G = test_A_G();
+  for(wait = 0; wait < 1000000; wait++){;}
+  status_M = test_M();
+
+  if(status_A_G == WHO_AM_I_AG_RSP && status_M == WHO_AM_I_M_RSP)
+    status = 1;
+  return status;
 }
 
 // Start a transmission on the I2C bus
@@ -78,9 +89,16 @@ int read_register(unsigned char sad, unsigned char ad, unsigned char * buffer, i
   return 1;
 }
 
-unsigned char test_IMU(){
+unsigned char test_A_G(){
   unsigned char buffer[1];
-  NU32_WriteUART1("Testing WHO_AM_I \r\n");
-  read_register(SAD_AG_1, A_G_WHO_AM_I, buffer, 1);
+  read_register(SAD_AG_1, WHO_AM_I_XG, buffer, 1);
   return buffer[0];
 }
+
+unsigned char test_M(){
+  unsigned char buffer[1];
+  read_register(SAD_M_1, WHO_AM_I_M, buffer, 1);
+  return buffer[0];
+}
+
+
