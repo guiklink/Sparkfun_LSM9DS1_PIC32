@@ -19,7 +19,7 @@ int i2c_master_setup(void) {
   status_A_G = test_A_G();
   for(wait = 0; wait < 1000000; wait++){;}
   status_M = test_M();
-
+  for(wait = 0; wait < 1000000; wait++){;}
   if(status_A_G == WHO_AM_I_AG_RSP && status_M == WHO_AM_I_M_RSP)
     status = 1;
   return status;
@@ -89,6 +89,21 @@ int read_register(unsigned char sad, unsigned char ad, unsigned char * buffer, i
   return 1;
 }
 
+int write_register(unsigned char sad, unsigned char ad, unsigned char * buffer, int n_bytes_write){
+  int write_index = 0;
+
+  start_comm(sad, ad);
+
+  // Send data
+  while(write_index < n_bytes_write){
+    i2c_master_send(buffer[write_index]);
+    write_index++;
+  }
+  i2c_master_stop();
+
+  return 1;
+}
+
 unsigned char test_A_G(){
   unsigned char buffer[1];
   read_register(SAD_AG_1, WHO_AM_I_XG, buffer, 1);
@@ -101,4 +116,66 @@ unsigned char test_M(){
   return buffer[0];
 }
 
+void config_gyro(int scale){      // Pre-defined 500 and 2000
+  char buffer[1];
 
+  buffer[0] = 0b10100001;
+  write_register(SAD_AG_1, CTRL_REG1_G, buffer, 1);
+}
+
+void config_accel(){
+  
+}
+
+void config_mag(){
+  
+}
+
+void get_sensor_data(char sad, char ad, int *output){       // output[0] = x | output[1] = y | output[2] = z
+  unsigned char buffer[6];
+  int timer;
+
+  read_register(sad, ad, buffer, 6);
+
+  output[0] = (buffer[1] << 8) | buffer[0];
+  output[1] = (buffer[3] << 8) | buffer[2];
+  output[2] = (buffer[5] << 8) | buffer[4];
+  //for(timer = 0; timer < 1000000; timer++){;};
+  //return (buffer[1] << 8) | buffer[0];
+}
+
+void get_gyro(int *output){
+  get_sensor_data(SAD_AG_1, OUT_X_L_G, output);
+}
+
+void get_accel(int *output){
+  get_sensor_data(SAD_AG_1, OUT_X_L_XL, output);
+}
+
+void get_mag(int *output){
+  get_sensor_data(SAD_M_1, OUT_X_L_M, output);
+}
+
+int get_x_A(){
+  unsigned char buffer[1];
+  char log[20];
+  int answer, timer;
+  read_register(SAD_AG_1, OUT_X_L_G, buffer, 1);
+  for(timer = 0; timer < 1000000; timer++){;};
+
+  NU32_WriteUART1("\r\n");
+  sprintf(log, "Accel X1: %d", buffer[0]);
+  NU32_WriteUART1(log);
+  
+
+  read_register(SAD_AG_1, OUT_X_H_G, buffer, 1);
+  for(timer = 0; timer < 1000000; timer++){;};
+
+  //answer = (buffer[1] << 8) | buffer[0];
+  NU32_WriteUART1("\r\n");
+  sprintf(log, "Accel X2: %d", buffer[0]);
+  NU32_WriteUART1(log);
+
+  return buffer[0];
+  //return (buffer[1] << 8) | buffer[0];
+}

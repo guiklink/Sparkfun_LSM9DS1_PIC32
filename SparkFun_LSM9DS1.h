@@ -34,8 +34,12 @@ void i2c_master_send(unsigned char byte); 	// send a byte (either an address or 
 unsigned char i2c_master_recv(void);      	// receive a byte of data
 void i2c_master_ack(int val);             	// send an ACK (0) or NACK (1)
 void i2c_master_stop(void);               	// send a stop
-unsigned char test_A_G();
-unsigned char test_M();
+unsigned char test_A_G();					// ping WHO_AM_I register from accel and gyro
+unsigned char test_M();						// ping WHO_AM_I register from magnetometer
+void get_gyro(int *output);					// output[0] = x | output[1] = y | output[2] = z
+void get_accel(int *output);				// output[0] = x | output[1] = y | output[2] = z
+void get_mag(int *output);					// output[0] = x | output[1] = y | output[2] = z
+int get_x_A();
 
 
 #endif
