@@ -36,6 +36,10 @@ void i2c_master_ack(int val);             	// send an ACK (0) or NACK (1)
 void i2c_master_stop(void);               	// send a stop
 unsigned char test_A_G();					// ping WHO_AM_I register from accel and gyro
 unsigned char test_M();						// ping WHO_AM_I register from magnetometer
+
+void config_gyro_accel_default();      // Turn on the gyro and accel with default pre-selected configurations
+void config_mag();
+
 void get_gyro(int *output);					// output[0] = x | output[1] = y | output[2] = z
 void get_accel(int *output);				// output[0] = x | output[1] = y | output[2] = z
 void get_mag(int *output);					// output[0] = x | output[1] = y | output[2] = z

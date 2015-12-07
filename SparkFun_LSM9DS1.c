@@ -116,19 +116,43 @@ unsigned char test_M(){
   return buffer[0];
 }
 
-void config_gyro(int scale){      // Pre-defined 500 and 2000
+void config_gyro_accel_default(){      // Turn on the gyro and accel with default pre-selected configurations
+  char buffer[1];
+  int wait;
+  buffer[0] = 0b11000001;        // See table 46 and 47 from the datasheet (Set Output Data Rate / Scale / DPS)
+  write_register(SAD_AG_1, CTRL_REG1_G, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+
+  buffer[0] = 0x00;              // See item 7.13 from the datasheet
+  write_register(SAD_AG_1, CTRL_REG2_G, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+
+  buffer[0] = 0x00;              // See table 51 from the datasheet (in this case low power is disable and ho HP filter is used)
+  write_register(SAD_AG_1, CTRL_REG3_G, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+
+  buffer[0] = 0b00111000;        // See table 62 from the datasheet (Enable all the axis and disable the interruption request)
+  write_register(SAD_AG_1, CTRL_REG4, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+
+  buffer[0] = 0x00;             // See table 54 from the datasheet (Define axis-orientation)
+  write_register(SAD_AG_1, ORIENT_CFG_G, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+
+  buffer[0] = 0b00111000;             // See table 64 from the datasheet (Define data decimation and enable axis)
+  write_register(SAD_AG_1, CTRL_REG5_XL, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+
+  buffer[0] = 0b11010000;             // See table 67 from the datasheet (Define power mode, scale, bandwidht and anti-aliasing)
+  write_register(SAD_AG_1, CTRL_REG6_XL, buffer, 1);
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
+}
+
+void config_mag(){
   char buffer[1];
 
   buffer[0] = 0b10100001;
   write_register(SAD_AG_1, CTRL_REG1_G, buffer, 1);
-}
-
-void config_accel(){
-  
-}
-
-void config_mag(){
-  
 }
 
 void get_sensor_data(char sad, char ad, int *output){       // output[0] = x | output[1] = y | output[2] = z

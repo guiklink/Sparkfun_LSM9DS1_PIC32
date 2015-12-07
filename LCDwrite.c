@@ -23,7 +23,7 @@ int main() {
   else
     NU32_WriteUART1("IMU NOT working!\r\n");
 
-  config_gyro();
+  config_gyro_accel_default();
 
   while(nreceived){
     for(timer = 0; timer < 100000000; timer++){;}
@@ -40,10 +40,10 @@ int main() {
     NU32_WriteUART1("\r\n");
     for(timer = 0; timer < 1000000; timer++){;}
 
-    get_mag(magn);
+    /*get_mag(magn);
     sprintf(msg, "MX = %d | MY = %d | MZ = %d", magn[0],magn[1],magn[2]);
     NU32_WriteUART1(msg);
-    NU32_WriteUART1("\r\n");
+    NU32_WriteUART1("\r\n");*/
   }
 
   return 0;
