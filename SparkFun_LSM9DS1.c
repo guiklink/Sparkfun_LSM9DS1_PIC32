@@ -2,6 +2,15 @@
 #include "SparkFun_LSM9DS1.h"
 #include "LSM9DS1_Registers.h"
 
+
+void i2c_master_start(void);                // send a START signal
+void i2c_master_restart(void);              // send a RESTART signal
+void i2c_master_send(unsigned char byte);   // send a byte (either an address or data)
+unsigned char i2c_master_recv(void);        // receive a byte of data
+void i2c_master_ack(int val);               // send an ACK (0) or NACK (1)
+void i2c_master_stop(void);                 // send a stop
+
+
 // I2C Master utilities, 100 kHz, using polling rather than interrupts
 // The functions must be callled in the correct order as per the I2C protocol
 // Master will use I2C1 SDA1 (D9) and SCL1 (D10)
@@ -20,7 +29,7 @@ int i2c_master_setup(void) {
   for(wait = 0; wait < 1000000; wait++){;}
   status_M = test_M();
   for(wait = 0; wait < 1000000; wait++){;}
-  if(status_A_G == WHO_AM_I_AG_RSP && status_M == WHO_AM_I_M_RSP)
+  if(status_A_G == WHO_AM_I_AG_RSP && status_M == WHO_AM_I_M_RSP) // Ping both the gyro/accel and mag to check if it is working
     status = 1;
   return status;
 }
@@ -62,13 +71,13 @@ void i2c_master_stop(void) {          // send a STOP:
   while(I2C2CONbits.PEN) { ; }        // wait for STOP to complete
 }
 
-void start_comm(unsigned char sad, unsigned char ad){
+void start_comm(unsigned char sad, unsigned char ad){     // These steps are common for both write and read function
   i2c_master_start();
   i2c_master_send(sad << 1);
   i2c_master_send(ad);
 }
 
-int read_register(unsigned char sad, unsigned char ad, unsigned char * buffer, int n_bytes_read){
+int read_register(unsigned char sad, unsigned char ad, unsigned char * buffer, int n_bytes_read){ // Follows the sequence from tables 17 and 18 from the datasheet
   int read_index = 0;
 
   start_comm(sad, ad);
@@ -89,7 +98,7 @@ int read_register(unsigned char sad, unsigned char ad, unsigned char * buffer, i
   return 1;
 }
 
-int write_register(unsigned char sad, unsigned char ad, unsigned char * buffer, int n_bytes_write){
+int write_register(unsigned char sad, unsigned char ad, unsigned char * buffer, int n_bytes_write){ // Follows the sequence from tables 15 and 16 from the datasheet
   int write_index = 0;
 
   start_comm(sad, ad);
@@ -104,13 +113,13 @@ int write_register(unsigned char sad, unsigned char ad, unsigned char * buffer, 
   return 1;
 }
 
-unsigned char test_A_G(){
+unsigned char test_A_G(){           // ping the WHO_A_I register to see if it's working, it should return 0x68 = 104
   unsigned char buffer[1];
   read_register(SAD_AG_1, WHO_AM_I_XG, buffer, 1);
   return buffer[0];
 }
 
-unsigned char test_M(){
+unsigned char test_M(){             // ping the WHO_A_I register to see if it's working, it should return 0x3D = 61
   unsigned char buffer[1];
   read_register(SAD_M_1, WHO_AM_I_M, buffer, 1);
   return buffer[0];
@@ -148,58 +157,33 @@ void config_gyro_accel_default(){      // Turn on the gyro and accel with defaul
   for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
 }
 
-void config_mag(){
+void config_mag_default(){
   char buffer[1];
 
   buffer[0] = 0b10100001;
   write_register(SAD_AG_1, CTRL_REG1_G, buffer, 1);
+
+  for(wait = 0; wait < 1000000; wait++){;}  // Wait before doing another operation
 }
 
 void get_sensor_data(char sad, char ad, int *output){       // output[0] = x | output[1] = y | output[2] = z
-  unsigned char buffer[6];
-  int timer;
+  unsigned char buffer[6];                            // each value has 2 byter (3 values x 2 byter = 6 bytes)
 
-  read_register(sad, ad, buffer, 6);
+  read_register(sad, ad, buffer, 6);                  // sequentially reads 6 registers
 
-  output[0] = (buffer[1] << 8) | buffer[0];
-  output[1] = (buffer[3] << 8) | buffer[2];
-  output[2] = (buffer[5] << 8) | buffer[4];
-  //for(timer = 0; timer < 1000000; timer++){;};
-  //return (buffer[1] << 8) | buffer[0];
+  output[0] = (buffer[1] << 8) | buffer[0];           // merge the 2 bytes in a single value, e.g. (OUT_X_H_G << 8) | OUT_X_L_G
+  output[1] = (buffer[3] << 8) | buffer[2];           // xxx_x_H_x contains the most significant bytes and xxx_x_L_x contains the least significant bytes
+  output[2] = (buffer[5] << 8) | buffer[4];           
 }
 
-void get_gyro(int *output){
+void get_gyro(int *output){                           // get data from gyro output[0] = x | output[1] = y | output[2] = z
   get_sensor_data(SAD_AG_1, OUT_X_L_G, output);
 }
 
-void get_accel(int *output){
+void get_accel(int *output){                          // get data from accel output[0] = x | output[1] = y | output[2] = z 
   get_sensor_data(SAD_AG_1, OUT_X_L_XL, output);
 }
 
 void get_mag(int *output){
-  get_sensor_data(SAD_M_1, OUT_X_L_M, output);
-}
-
-int get_x_A(){
-  unsigned char buffer[1];
-  char log[20];
-  int answer, timer;
-  read_register(SAD_AG_1, OUT_X_L_G, buffer, 1);
-  for(timer = 0; timer < 1000000; timer++){;};
-
-  NU32_WriteUART1("\r\n");
-  sprintf(log, "Accel X1: %d", buffer[0]);
-  NU32_WriteUART1(log);
-  
-
-  read_register(SAD_AG_1, OUT_X_H_G, buffer, 1);
-  for(timer = 0; timer < 1000000; timer++){;};
-
-  //answer = (buffer[1] << 8) | buffer[0];
-  NU32_WriteUART1("\r\n");
-  sprintf(log, "Accel X2: %d", buffer[0]);
-  NU32_WriteUART1(log);
-
-  return buffer[0];
-  //return (buffer[1] << 8) | buffer[0];
+  get_sensor_data(SAD_M_1, OUT_X_L_M, output);        // get data from mag output[0] = x | output[1] = y | output[2] = z
 }

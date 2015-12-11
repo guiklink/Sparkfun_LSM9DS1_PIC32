@@ -34,11 +34,11 @@ int main() {
     NU32_WriteUART1("\r\n");
     for(timer = 0; timer < 1000000; timer++){;}
 
-    get_accel(accel);
+    /*get_accel(accel);
     sprintf(msg, "AX = %d | AY = %d | AZ = %d", accel[0],accel[1],accel[2]);
     NU32_WriteUART1(msg);
     NU32_WriteUART1("\r\n");
-    for(timer = 0; timer < 1000000; timer++){;}
+    for(timer = 0; timer < 1000000; timer++){;}*/
 
     /*get_mag(magn);
     sprintf(msg, "MX = %d | MY = %d | MZ = %d", magn[0],magn[1],magn[2]);

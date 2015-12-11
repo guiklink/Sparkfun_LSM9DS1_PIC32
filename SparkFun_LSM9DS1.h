@@ -27,23 +27,19 @@
 
 
 
-int i2c_master_setup(void);              	// set up I2C 1 as a master, at 400 kHz
-void i2c_master_start(void);              	// send a START signal
-void i2c_master_restart(void);            	// send a RESTART signal
-void i2c_master_send(unsigned char byte); 	// send a byte (either an address or data)
-unsigned char i2c_master_recv(void);      	// receive a byte of data
-void i2c_master_ack(int val);             	// send an ACK (0) or NACK (1)
-void i2c_master_stop(void);               	// send a stop
+
+
 unsigned char test_A_G();					// ping WHO_AM_I register from accel and gyro
 unsigned char test_M();						// ping WHO_AM_I register from magnetometer
 
-void config_gyro_accel_default();      // Turn on the gyro and accel with default pre-selected configurations
-void config_mag();
+
+int i2c_master_setup(void);              	// set up I2C 1 as a master, at 400 kHz
+void config_gyro_accel_default();      		// Turn on the gyro and accel with default pre-selected configurations
+void config_mag_default();					// Turn on the magnetometer with default pre-selected configurations
 
 void get_gyro(int *output);					// output[0] = x | output[1] = y | output[2] = z
 void get_accel(int *output);				// output[0] = x | output[1] = y | output[2] = z
 void get_mag(int *output);					// output[0] = x | output[1] = y | output[2] = z
-int get_x_A();
 
 
 #endif
